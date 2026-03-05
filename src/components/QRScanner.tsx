@@ -62,6 +62,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({ sessionId, onSuccess, open
     const handleScan = async (rawText: string) => {
         try {
             let payload: any = {};
+            const normalizedSessionId = (() => {
+                const n = Number(sessionId);
+                return Number.isFinite(n) ? n : sessionId;
+            })();
 
             try {
                 // Prefer JSON payloads from QR codes: { studentId, studentName, email }
@@ -69,21 +73,25 @@ export const QRScanner: React.FC<QRScannerProps> = ({ sessionId, onSuccess, open
                 if (parsed && parsed.studentId) {
                     payload = {
                         studentId: parsed.studentId,
-                        classId: sessionId,
+                        sessionId: normalizedSessionId,
                     };
                 } else {
                     // Fallback to legacy token-based payload
-                    payload = { qrToken: rawText, sessionId };
+                    payload = { qrToken: rawText, sessionId: normalizedSessionId };
                 }
             } catch {
                 // Not JSON – treat as legacy token
-                payload = { qrToken: rawText, sessionId };
+                payload = { qrToken: rawText, sessionId: normalizedSessionId };
             }
+
+            console.debug('[QRScanner] decoded QR text:', rawText);
+            console.debug('[QRScanner] mark attendance payload:', payload);
 
             const res = await fetchApi('/attendance/mark', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
+            console.debug('[QRScanner] mark attendance response:', res);
             toast({
                 title: 'Success',
                 description: (res.message || 'Attendance marked successfully') + (res.data?.studentName ? ` (${res.data.studentName})` : ''),
@@ -91,6 +99,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ sessionId, onSuccess, open
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
+            console.error('[QRScanner] Failed to mark attendance', err);
             toast({
                 title: 'Failed',
                 description: err.message || 'Failed to mark attendance',

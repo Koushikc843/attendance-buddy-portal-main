@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,6 +19,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -97,12 +101,14 @@ public class AdminController {
 
     @GetMapping("/users/pending/{role}")
     public ResponseEntity<?> getPendingUsers(@PathVariable String role) {
+        log.info("GET /api/admin/users/pending/{}", role);
         return ResponseEntity.ok(
                 buildResponse(true, userRepository.findByRoleAndStatus(role, "PENDING"), "Pending users loaded"));
     }
 
     @PatchMapping("/users/{id}/approve")
     public ResponseEntity<?> approveUser(@PathVariable Long id) {
+        log.info("PATCH /api/admin/users/{}/approve", id);
         Optional<User> existing = userRepository.findById(id);
         if (existing.isPresent()) {
             User user = existing.get();
@@ -121,6 +127,7 @@ public class AdminController {
 
     @DeleteMapping("/users/{id}/reject")
     public ResponseEntity<?> rejectUser(@PathVariable Long id) {
+        log.info("DELETE /api/admin/users/{}/reject", id);
         Optional<User> existing = userRepository.findById(id);
         if (existing.isPresent()) {
             User user = existing.get();

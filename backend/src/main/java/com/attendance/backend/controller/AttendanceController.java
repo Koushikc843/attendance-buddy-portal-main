@@ -5,6 +5,8 @@ import com.attendance.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
@@ -13,6 +15,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/attendance")
 public class AttendanceController {
+
+    private static final Logger log = LoggerFactory.getLogger(AttendanceController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -28,17 +32,41 @@ public class AttendanceController {
 
     @PostMapping("/mark")
     public ResponseEntity<?> markAttendance(@RequestBody Map<String, Object> payload) {
+        if (payload == null) {
+            log.info("POST /api/attendance/mark payloadKeys=null");
+            log.warn("Attendance mark rejected: missing request body");
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Missing request body"));
+        }
+        log.info("POST /api/attendance/mark payloadKeys={}", payload.keySet());
         // Support both legacy QR-token based flow and new JSON-based QR with studentId/classId
         String qrToken = payload.get("qrToken") != null ? payload.get("qrToken").toString() : null;
-        Long studentId = payload.get("studentId") != null ? Long.valueOf(payload.get("studentId").toString()) : null;
+        Long studentId = null;
+        try {
+            studentId = payload.get("studentId") != null ? Long.valueOf(payload.get("studentId").toString()) : null;
+        } catch (Exception ex) {
+            log.warn("Attendance mark rejected: invalid studentId");
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Invalid student identifier"));
+        }
         Long sessionId = null;
-        if (payload.get("sessionId") != null) {
-            sessionId = Long.valueOf(payload.get("sessionId").toString());
-        } else if (payload.get("classId") != null) {
-            sessionId = Long.valueOf(payload.get("classId").toString());
+        try {
+            if (payload.get("sessionId") != null) {
+                sessionId = Long.valueOf(payload.get("sessionId").toString());
+            } else if (payload.get("classId") != null) {
+                sessionId = Long.valueOf(payload.get("classId").toString());
+            }
+        } catch (Exception ex) {
+            log.warn("Attendance mark rejected: invalid sessionId/classId");
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Invalid class/session identifier"));
         }
 
         if (sessionId == null) {
+            log.warn("Attendance mark rejected: missing sessionId/classId");
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Missing class/session identifier"));
@@ -50,6 +78,7 @@ public class AttendanceController {
         } else if (qrToken != null) {
             studentOpt = userRepository.findByQrToken(qrToken);
         } else {
+            log.warn("Attendance mark rejected: missing student info");
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Missing student information in QR payload"));
@@ -57,6 +86,7 @@ public class AttendanceController {
 
         // 1. Validate Student
         if (!studentOpt.isPresent() || !"student".equalsIgnoreCase(studentOpt.get().getRole())) {
+            log.warn("Attendance mark rejected: invalid student");
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Invalid or expired QR code"));
@@ -66,6 +96,7 @@ public class AttendanceController {
         // 2. Validate Session
         Optional<ClassSession> sessionOpt = sessionRepository.findById(sessionId);
         if (!sessionOpt.isPresent()) {
+            log.warn("Attendance mark rejected: invalid session");
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Invalid session"));
@@ -77,6 +108,7 @@ public class AttendanceController {
         boolean isEnrolled = enrollments.stream()
                 .anyMatch(e -> e.getCourse().getId().equals(session.getCourse().getId()));
         if (!isEnrolled) {
+            log.warn("Attendance mark rejected: student not enrolled");
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Student is not enrolled in this course"));
@@ -86,6 +118,7 @@ public class AttendanceController {
         List<AttendanceRecord> existingRecords = attendanceRepository.findBySession(session);
         boolean alreadyMarked = existingRecords.stream().anyMatch(r -> r.getStudent().getId().equals(student.getId()));
         if (alreadyMarked) {
+            log.warn("Attendance mark rejected: duplicate attendance");
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Attendance already marked for this student"));
@@ -93,7 +126,8 @@ public class AttendanceController {
 
         // 5. Save the attendance record
         AttendanceRecord record = new AttendanceRecord(null, session, student, "Present");
-        attendanceRepository.save(record);
+        AttendanceRecord saved = attendanceRepository.save(record);
+        log.info("Attendance saved: {}", saved.getId());
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
