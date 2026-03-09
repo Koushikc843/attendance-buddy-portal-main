@@ -76,10 +76,14 @@ export const AdminDashboard: React.FC = () => {
     loadData();
   }, []);
 
-  const handleDeleteUser = async (id: number, name: string) => {
+  const handleDeleteUser = async (id: number | string, name: string) => {
     if (!confirm(`Are you sure you want to permanently delete ${name}?`)) return;
     try {
-      await fetchApi(`/admin/users/${id}`, { method: 'DELETE' });
+      const normalizedId = typeof id === 'string' ? Number(id) : id;
+      if (!Number.isFinite(normalizedId)) {
+        throw new Error('Invalid user id.');
+      }
+      await fetchApi(`/admin/users/${normalizedId}`, { method: 'DELETE' });
       toast({ title: 'Deleted', description: `${name} has been removed successfully.` });
       loadData();
     } catch (err: any) {

@@ -91,7 +91,11 @@ export const MarkAttendanceLayout: React.FC = () => {
             {!selectedSessionId ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {sessions.map(s => (
-                        <Card key={s.id} className="cursor-pointer hover:border-primary transition-all" onClick={() => setSelectedSessionId(s.id)}>
+                        <Card
+                            key={s.id}
+                            className="cursor-pointer rounded-2xl border border-border/70 bg-card/80 shadow-sm hover:shadow-xl hover:border-primary/60 hover:-translate-y-1 transition-transform transition-shadow duration-200"
+                            onClick={() => setSelectedSessionId(s.id)}
+                        >
                             <CardHeader>
                                 <CardTitle>{s.name}</CardTitle>
                                 <CardDescription>{s.time} • {s.students} Students</CardDescription>

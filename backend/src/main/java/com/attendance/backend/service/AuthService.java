@@ -67,4 +67,35 @@ public class AuthService {
         user.setDepartment(department);
         return userRepository.save(user);
     }
+
+    public User updateProfile(Long id, String name, String email, String currentPassword, String newPassword) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (currentPassword != null && !currentPassword.isBlank()) {
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                throw new RuntimeException("Current password is incorrect");
+            }
+        }
+
+        if (name != null && !name.isBlank()) {
+            user.setName(name);
+        }
+
+        if (email != null && !email.isBlank()) {
+            // If email is changed, ensure it is not already used by another account
+            userRepository.findByEmail(email)
+                    .filter(existing -> !existing.getId().equals(id))
+                    .ifPresent(existing -> {
+                        throw new RuntimeException("Email already exists");
+                    });
+            user.setEmail(email);
+        }
+
+        if (newPassword != null && !newPassword.isBlank()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
+
+        return userRepository.save(user);
+    }
 }

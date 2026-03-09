@@ -3,6 +3,7 @@ package com.attendance.backend.controller;
 import com.attendance.backend.model.LoginRequest;
 import com.attendance.backend.model.RegisterFacultyRequest;
 import com.attendance.backend.model.RegisterStudentRequest;
+import com.attendance.backend.model.UpdateProfileRequest;
 import com.attendance.backend.model.User;
 import com.attendance.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +75,36 @@ public class AuthController {
                     request.getFacultyId(), request.getDepartment());
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Registration successful. Please wait for admin approval.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request) {
+        try {
+            User updatedUser = authService.updateProfile(
+                    request.getId(),
+                    request.getName(),
+                    request.getEmail(),
+                    request.getCurrentPassword(),
+                    request.getNewPassword());
+
+            User userResponse = new User();
+            userResponse.setId(updatedUser.getId());
+            userResponse.setName(updatedUser.getName());
+            userResponse.setEmail(updatedUser.getEmail());
+            userResponse.setRole(updatedUser.getRole());
+            userResponse.setStatus(updatedUser.getStatus());
+            userResponse.setQrToken(updatedUser.getQrToken());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Profile updated successfully");
+            response.put("user", userResponse);
+
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();

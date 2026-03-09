@@ -81,13 +81,24 @@ export const DashboardSidebar: React.FC = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                'group relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md ring-1 ring-sidebar-primary/40'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:translate-x-1'
               )}
             >
-              <Icon className="w-5 h-5" />
+              <span
+                className={cn(
+                  'absolute left-2 h-7 w-1 rounded-full bg-transparent transition-colors duration-200',
+                  isActive && 'bg-sidebar-primary-foreground'
+                )}
+              />
+              <Icon
+                className={cn(
+                  'w-5 h-5 flex-shrink-0 transition-colors duration-200',
+                  isActive ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground'
+                )}
+              />
               {item.label}
             </NavLink>
           );

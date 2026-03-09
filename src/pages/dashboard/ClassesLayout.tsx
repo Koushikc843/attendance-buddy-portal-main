@@ -4,6 +4,7 @@ import { fetchApi } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, BarChart3, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { AttendanceChart } from '@/components/AttendanceChart';
 import { useNavigate } from 'react-router-dom';
 
 export const ClassesLayout: React.FC = () => {
@@ -55,6 +56,23 @@ export const ClassesLayout: React.FC = () => {
                 <div className="text-sm text-destructive">{error}</div>
             )}
 
+            {!loading && !error && classes.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AttendanceChart
+                        type="bar"
+                        title={user?.role === 'faculty' ? 'Class-wise Attendance Overview' : 'Your Attendance by Class'}
+                        data={classes
+                            .map((c: any) => {
+                                const className = c.subject || c.name || 'Class';
+                                const attendancePct = c.attendance || c.attendancePercentage;
+                                if (typeof attendancePct !== 'number') return null;
+                                return { name: className, value: attendancePct };
+                            })
+                            .filter(Boolean) as { name: string; value: number }[]}
+                    />
+                </div>
+            )}
+
             {!loading && !error && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {classes.map((c: any) => {
@@ -65,7 +83,10 @@ export const ClassesLayout: React.FC = () => {
                         const attendancePct = c.attendance || c.attendancePercentage;
 
                         return (
-                            <Card key={c.id} className="shadow-sm border-border hover:border-primary/40 transition-all">
+                            <Card
+                                key={c.id}
+                                className="shadow-sm border border-border/60 rounded-2xl bg-card/80 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
+                            >
                                 <CardHeader className="space-y-1">
                                     <CardTitle className="text-lg flex items-center justify-between gap-2">
                                         <span>{className}</span>

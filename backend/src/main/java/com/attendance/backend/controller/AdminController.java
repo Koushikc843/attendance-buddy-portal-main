@@ -3,6 +3,7 @@ package com.attendance.backend.controller;
 import com.attendance.backend.model.User;
 import com.attendance.backend.model.Role;
 import com.attendance.backend.repository.UserRepository;
+import com.attendance.backend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,9 @@ public class AdminController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AdminService adminService;
 
     private Map<String, Object> buildResponse(boolean success, Object data, String message) {
         Map<String, Object> body = new HashMap<>();
@@ -89,14 +93,25 @@ public class AdminController {
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        Optional<User> existing = userRepository.findById(id);
-        if (existing.isPresent()) {
-            userRepository.deleteById(id);
+        try {
+            Optional<User> existing = userRepository.findById(id);
+            if (existing.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(buildResponse(false, null, "User not found"));
+            }
+
+            // Existing users may have dependent records (enrollments/attendance/courses).
+            // Delete dependents first to avoid FK constraint failures.
+            adminService.deleteUserCascade(id);
             return ResponseEntity.ok(
-                    buildResponse(true, null, "User and associated QR token successfully deleted."));
+                    buildResponse(true, null, "User and associated records successfully deleted."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(buildResponse(false, null, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(buildResponse(false, null, "Failed to delete user."));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildResponse(false, null, "User not found"));
     }
 
     @GetMapping("/users/pending/{role}")
