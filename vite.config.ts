@@ -12,7 +12,13 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+
+  preview: {
+    allowedHosts: ["attendance-buddy-portal-main-frontend.onrender.com"]
+  },
+
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
