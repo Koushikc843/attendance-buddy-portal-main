@@ -70,8 +70,8 @@ public String health() {
     @PostMapping("/register/student")
     public ResponseEntity<?> registerStudent(@RequestBody RegisterStudentRequest request) {
         try {
-            User user = authService.registerStudent(request.getName(), request.getEmail(), request.getPassword(),
-                    request.getUsn(), request.getDepartment(), request.getYear());
+            authService.registerStudent(request.getName(), request.getEmail(), request.getPassword(),
+                    request.getUsn(), request.getDepartment(), request.getYear(), request.getCourseIds());
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Registration successful. Please wait for admin approval.");
             return ResponseEntity.ok(response);
@@ -85,8 +85,8 @@ public String health() {
     @PostMapping("/register/faculty")
     public ResponseEntity<?> registerFaculty(@RequestBody RegisterFacultyRequest request) {
         try {
-            User user = authService.registerFaculty(request.getName(), request.getEmail(), request.getPassword(),
-                    request.getFacultyId(), request.getDepartment());
+            authService.registerFaculty(request.getName(), request.getEmail(), request.getPassword(),
+                    request.getFacultyId(), request.getDepartment(), request.getCourseName());
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Registration successful. Please wait for admin approval.");
             return ResponseEntity.ok(response);

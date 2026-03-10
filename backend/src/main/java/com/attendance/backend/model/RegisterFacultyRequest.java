@@ -13,4 +13,6 @@ public class RegisterFacultyRequest {
     private String password;
     private String facultyId;
     private String department;
+    // Optional name for a course created during registration
+    private String courseName;
 }

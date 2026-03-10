@@ -1,18 +1,29 @@
 package com.attendance.backend.service;
 
+import com.attendance.backend.model.Course;
+import com.attendance.backend.model.CourseEnrollment;
 import com.attendance.backend.model.User;
+import com.attendance.backend.repository.CourseEnrollmentRepository;
+import com.attendance.backend.repository.CourseRepository;
 import com.attendance.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
+
+    @Autowired
+    private CourseEnrollmentRepository enrollmentRepository;
 
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
@@ -37,7 +48,7 @@ public class AuthService {
     }
 
     public User registerStudent(String name, String email, String password, String usn, String department,
-            Integer year) {
+                                Integer year, List<Long> courseIds) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
@@ -50,10 +61,21 @@ public class AuthService {
         user.setUsn(usn);
         user.setDepartment(department);
         user.setYear(year);
-        return userRepository.save(user);
+
+        User saved = userRepository.save(user);
+
+        if (courseIds != null && !courseIds.isEmpty()) {
+            List<Course> courses = courseRepository.findAllById(courseIds);
+            for (Course course : courses) {
+                enrollmentRepository.save(new CourseEnrollment(null, saved, course));
+            }
+        }
+
+        return saved;
     }
 
-    public User registerFaculty(String name, String email, String password, String facultyId, String department) {
+    public User registerFaculty(String name, String email, String password, String facultyId, String department,
+                                String courseName) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
@@ -65,7 +87,22 @@ public class AuthService {
         user.setStatus("PENDING");
         user.setFacultyId(facultyId);
         user.setDepartment(department);
-        return userRepository.save(user);
+
+        User saved = userRepository.save(user);
+
+        if (courseName != null && !courseName.isBlank()) {
+            String generatedCode = courseName
+                    .trim()
+                    .toUpperCase()
+                    .replaceAll("\\s+", "-");
+            if (generatedCode.length() > 12) {
+                generatedCode = generatedCode.substring(0, 12);
+            }
+            Course course = new Course(null, generatedCode, courseName, saved);
+            courseRepository.save(course);
+        }
+
+        return saved;
     }
 
     public User updateProfile(Long id, String name, String email, String currentPassword, String newPassword) {

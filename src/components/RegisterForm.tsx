@@ -41,10 +41,32 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
 
     // Faculty specific
     const [facultyId, setFacultyId] = useState('');
+    const [facultyCourseName, setFacultyCourseName] = useState('');
+
+    // Shared: available courses & selected for students
+    const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+    const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
+
+    React.useEffect(() => {
+        // Fetch courses once so students can select them during registration
+        fetchApi('/courses')
+            .then((res) => setAvailableCourses(res || []))
+            .catch(() => {
+                // Keep silent for now – registration should still work without course pre-selection
+            });
+    }, []);
+
+    const toggleCourseSelection = (courseId: number) => {
+        setSelectedCourseIds((prev) =>
+            prev.includes(courseId)
+                ? prev.filter((id) => id !== courseId)
+                : [...prev, courseId]
+        );
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -55,12 +77,29 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
             if (selectedRole === 'student') {
                 await fetchApi('/auth/register/student', {
                     method: 'POST',
-                    body: JSON.stringify({ name, email, password, role: 'student', usn, department, year: Number(year) })
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        role: 'student',
+                        usn,
+                        department,
+                        year: Number(year),
+                        courseIds: selectedCourseIds,
+                    }),
                 });
             } else if (selectedRole === 'faculty') {
                 await fetchApi('/auth/register/faculty', {
                     method: 'POST',
-                    body: JSON.stringify({ name, email, password, role: 'faculty', facultyId, department })
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        role: 'faculty',
+                        facultyId,
+                        department,
+                        courseName: facultyCourseName,
+                    }),
                 });
             }
 
@@ -143,7 +182,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                                 <Input
                                     id="name"
                                     type="text"
-                                    placeholder="John Doe"
+                                    placeholder="User Name"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className="pl-10"
@@ -159,7 +198,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="user@university.edu"
+                                    placeholder={
+                                        selectedRole === 'student'
+                                            ? 'student@gmail.com'
+                                            : 'faculty@gmail.com'
+                                    }
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="pl-10"
@@ -174,15 +217,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                                     <Label htmlFor="usn">USN / Roll Number</Label>
                                     <div className="relative">
                                         <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                        <Input
-                                            id="usn"
-                                            type="text"
-                                            placeholder="e.g. 1RV20CS120"
-                                            value={usn}
-                                            onChange={(e) => setUsn(e.target.value)}
-                                            className="pl-10"
-                                            required
-                                        />
+                                            <Input
+                                                id="usn"
+                                                type="text"
+                                                placeholder="20221CSE0594"
+                                                value={usn}
+                                                onChange={(e) => setUsn(e.target.value)}
+                                                className="pl-10"
+                                                required
+                                            />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
@@ -222,6 +265,31 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                             </>
                         )}
 
+                        {selectedRole === 'student' && availableCourses.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Select Courses</Label>
+                                <div className="max-h-40 overflow-y-auto border border-border/50 rounded-lg p-3 space-y-2">
+                                    {availableCourses.map((course) => (
+                                        <label
+                                            key={course.id}
+                                            className="flex items-center gap-2 text-sm cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4"
+                                                checked={selectedCourseIds.includes(course.id)}
+                                                onChange={() => toggleCourseSelection(course.id)}
+                                            />
+                                            <span>
+                                                {course.name}
+                                                {course.code ? ` (${course.code})` : ''}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {selectedRole === 'faculty' && (
                             <>
                                 <div className="grid grid-cols-2 gap-4">
@@ -254,6 +322,21 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                                                 required
                                             />
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="faculty-course-name">Course</Label>
+                                    <div className="relative">
+                                        <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                        <Input
+                                            id="faculty-course-name"
+                                            type="text"
+                                            placeholder="Course Name"
+                                            value={facultyCourseName}
+                                            onChange={(e) => setFacultyCourseName(e.target.value)}
+                                            className="pl-10"
+                                        />
                                     </div>
                                 </div>
                             </>
