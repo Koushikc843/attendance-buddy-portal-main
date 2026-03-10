@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -128,16 +129,19 @@ public class DashboardController {
                 }
 
                 List<ClassSession> sessions = sessionRepository.findByCourse(c);
+                LocalDate today = LocalDate.now();
                 for (ClassSession s : sessions) {
-                    if (!s.isMarked()) {
-                        Map<String, Object> tc = new HashMap<>();
-                        tc.put("id", s.getId().toString());
-                        tc.put("name", c.getName() + " - " + c.getCode());
-                        tc.put("time", s.getSessionTime().toString());
-                        tc.put("students", enrollments.size());
-                        tc.put("marked", s.isMarked());
-                        todayClasses.add(tc);
+                    if (!s.getSessionTime().toLocalDate().equals(today)) {
+                        continue;
                     }
+                    Map<String, Object> tc = new HashMap<>();
+                    tc.put("id", s.getId().toString());
+                    tc.put("name", c.getName() + " - " + c.getCode());
+                    tc.put("time", s.getSessionTime().toString());
+                    tc.put("students", enrollments.size());
+                    boolean marked = !attendanceRepository.findBySession(s).isEmpty();
+                    tc.put("marked", marked);
+                    todayClasses.add(tc);
                 }
             }
 

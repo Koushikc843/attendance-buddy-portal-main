@@ -59,17 +59,53 @@ public class DataSeeder {
             Course cs201 = new Course(null, "CS201", "Data Structures", darshan);
             Course cs301 = new Course(null, "CS301", "Computer Networks", vaibhav);
             Course cs401 = new Course(null, "CS401", "Database Systems", datta);
-            courseRepository.saveAll(Arrays.asList(cs201, cs301, cs401));
 
-            // Enrollments
+            // Additional courses per faculty
+            // Darshan
+            Course cloudSecurity = new Course(null, "CS-CSEC", "Cloud Security", darshan);
+            Course cloudComputing = new Course(null, "CS-CCMP", "Cloud Computing", darshan);
+            Course cloudApplication = new Course(null, "CS-CAPP", "Cloud Application", darshan);
+
+            // Datta
+            Course genAI = new Course(null, "CS-GENAI", "Gen AI", datta);
+            Course blockchain = new Course(null, "CS-BLOCK", "Blockchain", datta);
+            Course graphicalDesign = new Course(null, "CS-GDES", "Graphical Design", datta);
+
+            // Vaibhav
+            Course coa = new Course(null, "CS-COA", "COA", vaibhav);
+            Course digitalDesign = new Course(null, "CS-DDES", "Digital Design", vaibhav);
+            Course soa = new Course(null, "CS-SOA", "SOA", vaibhav);
+
+            List<Course> allCourses = Arrays.asList(
+                    cs201, cs301, cs401,
+                    cloudSecurity, cloudComputing, cloudApplication,
+                    genAI, blockchain, graphicalDesign,
+                    coa, digitalDesign, soa
+            );
+            courseRepository.saveAll(allCourses);
+
+            // Enrollments for initial demo courses
             enrollmentRepository.save(new CourseEnrollment(null, koushik, cs201));
             enrollmentRepository.save(new CourseEnrollment(null, koushik, cs301));
             enrollmentRepository.save(new CourseEnrollment(null, koushik, cs401));
 
             // Seed more enrollments
+            List<User> allStudents = Arrays.asList(koushik, shreedevi, pooja, mahadev, sudarshan);
             for (User student : Arrays.asList(shreedevi, pooja, mahadev, sudarshan)) {
                 enrollmentRepository.save(new CourseEnrollment(null, student, cs201));
                 enrollmentRepository.save(new CourseEnrollment(null, student, cs301));
+            }
+
+            // Enroll all students in the new faculty courses listed in the requirements
+            List<Course> newFacultyCourses = Arrays.asList(
+                    cloudSecurity, cloudComputing, cloudApplication,
+                    genAI, blockchain, graphicalDesign,
+                    coa, digitalDesign, soa
+            );
+            for (User student : allStudents) {
+                for (Course course : newFacultyCourses) {
+                    enrollmentRepository.save(new CourseEnrollment(null, student, course));
+                }
             }
 
             // Class Sessions
@@ -80,7 +116,25 @@ public class DataSeeder {
             ClassSession s4 = new ClassSession(null, cs301, LocalDateTime.now().minusDays(1), true);
             ClassSession s5 = new ClassSession(null, cs301, LocalDateTime.now().plusHours(4), false); // upcoming today
 
-            sessionRepository.saveAll(Arrays.asList(s1, s2, s3, s4, s5));
+            // Sessions for the newly added courses (one upcoming session each)
+            ClassSession csCloudSecurityToday = new ClassSession(null, cloudSecurity, LocalDateTime.now().plusHours(1), false);
+            ClassSession csCloudComputingToday = new ClassSession(null, cloudComputing, LocalDateTime.now().plusHours(3), false);
+            ClassSession csCloudApplicationToday = new ClassSession(null, cloudApplication, LocalDateTime.now().plusHours(5), false);
+
+            ClassSession csGenAIToday = new ClassSession(null, genAI, LocalDateTime.now().plusHours(2), false);
+            ClassSession csBlockchainToday = new ClassSession(null, blockchain, LocalDateTime.now().plusHours(4), false);
+            ClassSession csGraphicalDesignToday = new ClassSession(null, graphicalDesign, LocalDateTime.now().plusHours(6), false);
+
+            ClassSession csCOAToday = new ClassSession(null, coa, LocalDateTime.now().plusHours(1), false);
+            ClassSession csDigitalDesignToday = new ClassSession(null, digitalDesign, LocalDateTime.now().plusHours(3), false);
+            ClassSession csSOAToday = new ClassSession(null, soa, LocalDateTime.now().plusHours(5), false);
+
+            sessionRepository.saveAll(Arrays.asList(
+                    s1, s2, s3, s4, s5,
+                    csCloudSecurityToday, csCloudComputingToday, csCloudApplicationToday,
+                    csGenAIToday, csBlockchainToday, csGraphicalDesignToday,
+                    csCOAToday, csDigitalDesignToday, csSOAToday
+            ));
 
             // Attendance
             List<User> cs201Students = Arrays.asList(koushik, shreedevi, pooja, mahadev, sudarshan);
