@@ -1,18 +1,25 @@
 package com.attendance.backend.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.attendance.backend.model.LoginRequest;
 import com.attendance.backend.model.RegisterFacultyRequest;
 import com.attendance.backend.model.RegisterStudentRequest;
 import com.attendance.backend.model.UpdateProfileRequest;
 import com.attendance.backend.model.User;
 import com.attendance.backend.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
+@CrossOrigin(origins = "https://attendance-buddy-portal-main-frontend.onrender.com")
 
 @RestController
 @RequestMapping("/api/auth")
