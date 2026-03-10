@@ -1,5 +1,9 @@
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+export const API_BASE_URL =
 
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+
+  "https://attendance-buddy-portal-main.onrender.com/api";
 export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${API_BASE_URL}${normalizedEndpoint}`;
