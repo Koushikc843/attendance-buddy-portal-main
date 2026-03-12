@@ -119,6 +119,7 @@ public class DashboardController {
             List<Course> courses = courseRepository.findByFaculty(faculty);
             List<User> students = new ArrayList<>();
             List<Map<String, Object>> todayClasses = new ArrayList<>();
+            List<Map<String, Object>> upcomingPendingClasses = new ArrayList<>();
 
             for (Course c : courses) {
                 List<CourseEnrollment> enrollments = enrollmentRepository.findByCourse(c);
@@ -131,18 +132,31 @@ public class DashboardController {
                 List<ClassSession> sessions = sessionRepository.findByCourse(c);
                 LocalDate today = LocalDate.now();
                 for (ClassSession s : sessions) {
-                    if (!s.getSessionTime().toLocalDate().equals(today)) {
-                        continue;
-                    }
+                    // Only show sessions that are still pending (not marked).
+                    // The UI calls this "Today's Classes", but if there are no pending sessions today,
+                    // we fallback to upcoming pending sessions so faculty can still mark attendance.
+                    if (s.isMarked()) continue;
+
+                    LocalDate sessionDate = s.getSessionTime().toLocalDate();
                     Map<String, Object> tc = new HashMap<>();
                     tc.put("id", s.getId().toString());
                     tc.put("name", c.getName() + " - " + c.getCode());
                     tc.put("time", s.getSessionTime().toString());
                     tc.put("students", enrollments.size());
-                    boolean marked = !attendanceRepository.findBySession(s).isEmpty();
-                    tc.put("marked", marked);
-                    todayClasses.add(tc);
+                    tc.put("marked", false);
+
+                    if (sessionDate.equals(today)) {
+                        todayClasses.add(tc);
+                    } else if (sessionDate.isAfter(today)) {
+                        upcomingPendingClasses.add(tc);
+                    }
                 }
+            }
+
+            // If there are no pending sessions today, surface upcoming pending sessions (soonest first).
+            if (todayClasses.isEmpty() && !upcomingPendingClasses.isEmpty()) {
+                upcomingPendingClasses.sort(Comparator.comparing(m -> m.get("time").toString()));
+                todayClasses = upcomingPendingClasses;
             }
 
             Map<String, Object> data = new HashMap<>();
